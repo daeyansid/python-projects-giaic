@@ -1,5 +1,7 @@
 import os
 import re
+import tkinter as tk
+from tkinter import ttk, messagebox
 
 
 class TerminalUnitConverter:
@@ -242,6 +244,156 @@ class TerminalUnitConverter:
                 self.clear_screen()
 
 
+class TkinterUnitConverter:
+    def __init__(self, root):
+        self.root = root
+        self.converter = TerminalUnitConverter()
+        self.setup_ui()
+        
+    def setup_ui(self):
+        """Set up the Tkinter UI components"""
+        # Configure the root window
+        self.root.title("Unit Converter")
+        self.root.geometry("500x400")
+        self.root.resizable(True, True)
+        
+        # Style configuration
+        style = ttk.Style()
+        style.configure("TFrame", background="#f0f0f0")
+        style.configure("TButton", padding=6, relief="flat", background="#0078d7")
+        style.configure("TLabel", background="#f0f0f0", font=("Arial", 10))
+        style.configure("Header.TLabel", font=("Arial", 14, "bold"))
+        style.configure("Result.TLabel", font=("Arial", 12), foreground="#0078d7")
+        
+        # Main frame
+        main_frame = ttk.Frame(self.root, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Header
+        header_label = ttk.Label(main_frame, text="Unit Converter", style="Header.TLabel")
+        header_label.grid(row=0, column=0, columnspan=3, pady=10)
+        
+        # Category selection
+        ttk.Label(main_frame, text="Category:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        self.category_var = tk.StringVar()
+        self.category_combobox = ttk.Combobox(main_frame, textvariable=self.category_var, state="readonly", width=20)
+        self.category_combobox['values'] = list(self.converter.conversions.keys())
+        self.category_combobox.grid(row=1, column=1, sticky=tk.W, pady=5)
+        self.category_combobox.bind("<<ComboboxSelected>>", self.on_category_changed)
+        
+        # From unit selection
+        ttk.Label(main_frame, text="From Unit:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        self.from_unit_var = tk.StringVar()
+        self.from_unit_combobox = ttk.Combobox(main_frame, textvariable=self.from_unit_var, state="readonly", width=20)
+        self.from_unit_combobox.grid(row=2, column=1, sticky=tk.W, pady=5)
+        
+        # To unit selection
+        ttk.Label(main_frame, text="To Unit:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        self.to_unit_var = tk.StringVar()
+        self.to_unit_combobox = ttk.Combobox(main_frame, textvariable=self.to_unit_var, state="readonly", width=20)
+        self.to_unit_combobox.grid(row=3, column=1, sticky=tk.W, pady=5)
+        
+        # Value input
+        ttk.Label(main_frame, text="Value:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        self.value_var = tk.StringVar()
+        self.value_entry = ttk.Entry(main_frame, textvariable=self.value_var, width=20)
+        self.value_entry.grid(row=4, column=1, sticky=tk.W, pady=5)
+        
+        # Button frame for Convert and Clear buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.grid(row=5, column=0, columnspan=2, pady=10)
+        
+        # Convert button
+        convert_button = ttk.Button(button_frame, text="Convert", command=self.perform_conversion)
+        convert_button.pack(side=tk.LEFT, padx=5)
+        
+        # Clear button
+        clear_button = ttk.Button(button_frame, text="Clear", command=self.clear_form)
+        clear_button.pack(side=tk.LEFT, padx=5)
+        
+        # Result frame
+        result_frame = ttk.LabelFrame(main_frame, text="Result", padding="10")
+        result_frame.grid(row=6, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=10)
+        
+        # Result label
+        self.result_label = ttk.Label(result_frame, text="", style="Result.TLabel", wraplength=400)
+        self.result_label.pack(fill=tk.BOTH, expand=True)
+        
+        # Select default category
+        if self.category_combobox['values']:
+            self.category_combobox.current(0)
+            self.on_category_changed(None)
+            
+        # Configure grid layout
+        main_frame.columnconfigure(1, weight=1)
+            
+    def on_category_changed(self, event):
+        """Update unit lists when category changes"""
+        selected_category = self.category_var.get()
+        if selected_category:
+            units = self.converter.get_units(selected_category)
+            
+            # Update from unit combobox
+            self.from_unit_combobox['values'] = units
+            if units:
+                self.from_unit_combobox.current(0)
+                
+            # Update to unit combobox
+            self.to_unit_combobox['values'] = units
+            if units and len(units) > 1:
+                self.to_unit_combobox.current(1)
+            elif units:
+                self.to_unit_combobox.current(0)
+                
+    def perform_conversion(self):
+        """Handle the conversion and display results"""
+        try:
+            # Get values from UI
+            category = self.category_var.get()
+            from_unit = self.from_unit_var.get()
+            to_unit = self.to_unit_var.get()
+            value = self.value_var.get()
+            
+            # Validate inputs
+            if not category:
+                messagebox.showerror("Error", "Please select a category")
+                return
+                
+            if not from_unit:
+                messagebox.showerror("Error", "Please select a from unit")
+                return
+                
+            if not to_unit:
+                messagebox.showerror("Error", "Please select a to unit")
+                return
+                
+            if not value or not self.converter.validate_input(value):
+                messagebox.showerror("Error", "Please enter a valid number")
+                return
+                
+            # Perform conversion
+            result = self.converter.convert(category, from_unit, to_unit, value)
+            
+            # Display result
+            self.result_label.config(text=result)
+            
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+            
+    def clear_form(self):
+        """Clear input field and result display"""
+        self.value_var.set("")
+        self.result_label.config(text="")
+        # Set focus back to the input field
+        self.value_entry.focus()
+
+
 if __name__ == "__main__":
-    converter = TerminalUnitConverter()
-    converter.run()
+    # Create the root window
+    root = tk.Tk()
+    app = TkinterUnitConverter(root)
+    root.mainloop()
+    
+    # Uncomment the line below to use the terminal version instead
+    # converter = TerminalUnitConverter()
+    # converter.run()
