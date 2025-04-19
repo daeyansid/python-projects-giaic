@@ -296,12 +296,20 @@ class TkinterUnitConverter:
         # Value input
         ttk.Label(main_frame, text="Value:").grid(row=4, column=0, sticky=tk.W, pady=5)
         self.value_var = tk.StringVar()
-        value_entry = ttk.Entry(main_frame, textvariable=self.value_var, width=20)
-        value_entry.grid(row=4, column=1, sticky=tk.W, pady=5)
+        self.value_entry = ttk.Entry(main_frame, textvariable=self.value_var, width=20)
+        self.value_entry.grid(row=4, column=1, sticky=tk.W, pady=5)
+        
+        # Button frame for Convert and Clear buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.grid(row=5, column=0, columnspan=2, pady=10)
         
         # Convert button
-        convert_button = ttk.Button(main_frame, text="Convert", command=self.perform_conversion)
-        convert_button.grid(row=5, column=0, columnspan=2, pady=10)
+        convert_button = ttk.Button(button_frame, text="Convert", command=self.perform_conversion)
+        convert_button.pack(side=tk.LEFT, padx=5)
+        
+        # Clear button
+        clear_button = ttk.Button(button_frame, text="Clear", command=self.clear_form)
+        clear_button.pack(side=tk.LEFT, padx=5)
         
         # Result frame
         result_frame = ttk.LabelFrame(main_frame, text="Result", padding="10")
@@ -372,6 +380,13 @@ class TkinterUnitConverter:
         except Exception as e:
             messagebox.showerror("Error", str(e))
             
+    def clear_form(self):
+        """Clear input field and result display"""
+        self.value_var.set("")
+        self.result_label.config(text="")
+        # Set focus back to the input field
+        self.value_entry.focus()
+
 
 if __name__ == "__main__":
     # Create the root window
